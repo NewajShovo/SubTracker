@@ -76,7 +76,7 @@ struct SubscriptionLimitView: View {
                         .font(.title2)
                         .fontWeight(.bold)
                     
-                    Text("You've reached the free limit of \(FeatureManager.freeSubscriptionLimit) subscriptions. Upgrade to Pro for unlimited subscriptions and advanced features.")
+                    Text("You've reached the free limit of \(FeatureGate.freeSubscriptionLimit) subscriptions. Upgrade to Pro for unlimited subscriptions, AI scanning, and smart alerts.")
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

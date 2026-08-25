@@ -2,43 +2,39 @@
 //  SubTrackerApp.swift
 //  SubTracker
 //
-//  Created by Shovo on 22/8/26.
-//
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct SubTrackerApp: App {
-    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
-    @State private var isWelcomeComplete = false
-    
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Subscription.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+    @StateObject private var storeManager = StoreManager.shared
+    @StateObject private var featureGate: FeatureGate
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
+    let sharedModelContainer: ModelContainer
+
+    init() {
+        let store = StoreManager.shared
+        _featureGate = StateObject(wrappedValue: FeatureGate(storeManager: store))
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            sharedModelContainer = try SyncManager.makeContainer(enableCloud: SyncManager.isEnabled)
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
-    }()
-    
-    init() {
-        // Check if user has seen welcome screen
-        _isWelcomeComplete = State(initialValue: UserDefaults.standard.bool(forKey: "hasSeenWelcome"))
     }
 
     var body: some Scene {
         WindowGroup {
-            if isWelcomeComplete {
+            if hasCompletedOnboarding {
                 ContentView()
-                    .modelContainer(sharedModelContainer)
             } else {
-                WelcomeView(isWelcomeComplete: $isWelcomeComplete)
+                OnboardingView(isOnboardingComplete: $hasCompletedOnboarding)
             }
         }
+        .modelContainer(sharedModelContainer)
+        .environmentObject(storeManager)
+        .environmentObject(featureGate)
     }
 }
