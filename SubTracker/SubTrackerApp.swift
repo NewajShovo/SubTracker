@@ -10,9 +10,12 @@ import SwiftData
 
 @main
 struct SubTrackerApp: App {
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
+    @State private var isWelcomeComplete = false
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Subscription.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -22,11 +25,20 @@ struct SubTrackerApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
+    
+    init() {
+        // Check if user has seen welcome screen
+        _isWelcomeComplete = State(initialValue: UserDefaults.standard.bool(forKey: "hasSeenWelcome"))
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if isWelcomeComplete {
+                ContentView()
+                    .modelContainer(sharedModelContainer)
+            } else {
+                WelcomeView(isWelcomeComplete: $isWelcomeComplete)
+            }
         }
-        .modelContainer(sharedModelContainer)
     }
 }
