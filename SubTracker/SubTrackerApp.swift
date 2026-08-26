@@ -19,7 +19,7 @@ struct SubTrackerApp: App {
         _featureGate = StateObject(wrappedValue: FeatureGate(storeManager: store))
 
         do {
-            sharedModelContainer = try SyncManager.makeContainer(enableCloud: SyncManager.isEnabled)
+            sharedModelContainer = try SyncManager.makeContainer(enableCloud: false)
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }

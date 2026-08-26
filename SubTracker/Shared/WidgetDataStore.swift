@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import WidgetKit
 
 struct WidgetSubscriptionSnapshot: Codable {
     let name: String
@@ -20,11 +21,13 @@ struct WidgetDataPayload: Codable {
 }
 
 enum WidgetDataStore {
-    static let appGroupID = "group.leo.SubTracker1"
+    // App Groups disabled for now. Restore `group.leo.SubTracker1` when re-enabling widgets sharing.
+    // static let appGroupID = "group.leo.SubTracker1"
     static let storageKey = "widgetSubscriptionData"
 
     static var defaults: UserDefaults {
-        UserDefaults(suiteName: appGroupID) ?? .standard
+        // UserDefaults(suiteName: appGroupID) ?? .standard
+        .standard
     }
 
     static func update(from subscriptions: [Subscription]) {
@@ -55,6 +58,8 @@ enum WidgetDataStore {
         if let data = try? JSONEncoder().encode(payload) {
             store.set(data, forKey: storageKey)
         }
+
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     static func load() -> WidgetDataPayload? {

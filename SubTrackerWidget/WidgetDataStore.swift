@@ -20,12 +20,14 @@ struct WidgetDataPayload: Codable {
 }
 
 enum WidgetDataStore {
-    static let appGroupID = "group.leo.SubTracker1"
+    // App Groups disabled for now. Restore `group.leo.SubTracker1` when re-enabling sharing.
+    // static let appGroupID = "group.leo.SubTracker1"
     static let storageKey = "widgetSubscriptionData"
 
     static func load() -> WidgetDataPayload? {
-        guard let defaults = UserDefaults(suiteName: appGroupID),
-              let data = defaults.data(forKey: storageKey) else { return nil }
+        // guard let defaults = UserDefaults(suiteName: appGroupID),
+        //       let data = defaults.data(forKey: storageKey) else { return nil }
+        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return nil }
         return try? JSONDecoder().decode(WidgetDataPayload.self, from: data)
     }
 }

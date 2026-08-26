@@ -17,8 +17,9 @@ struct SettingsView: View {
     @State private var showingExportSheet = false
     @State private var exportURL: URL?
     @State private var restoreMessage: String?
-    @State private var iCloudSyncEnabled = SyncManager.isEnabled
-    @State private var showingRestartAlert = false
+    // iCloud Sync disabled for now.
+    // @State private var iCloudSyncEnabled = SyncManager.isEnabled
+    // @State private var showingRestartAlert = false
 
     var body: some View {
         NavigationStack {
@@ -39,11 +40,12 @@ struct SettingsView: View {
                     ShareSheet(items: [exportURL])
                 }
             }
-            .alert("Restart Required", isPresented: $showingRestartAlert) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text("Please restart the app to apply iCloud sync changes.")
-            }
+            // iCloud Sync disabled for now.
+            // .alert("Restart Required", isPresented: $showingRestartAlert) {
+            //     Button("OK", role: .cancel) { }
+            // } message: {
+            //     Text("Please restart the app to apply iCloud sync changes.")
+            // }
         }
     }
 
@@ -118,17 +120,18 @@ struct SettingsView: View {
                 }
             }
 
-            if featureGate.hasICloudSync() {
-                Toggle("iCloud Sync", isOn: $iCloudSyncEnabled)
-                    .onChange(of: iCloudSyncEnabled) { _, newValue in
-                        SyncManager.isEnabled = newValue
-                        showingRestartAlert = true
-                    }
-            } else {
-                Button { showingPaywall = true } label: {
-                    Label("iCloud Sync (Pro)", systemImage: "icloud")
-                }
-            }
+            // iCloud Sync disabled for now.
+            // if featureGate.hasICloudSync() {
+            //     Toggle("iCloud Sync", isOn: $iCloudSyncEnabled)
+            //         .onChange(of: iCloudSyncEnabled) { _, newValue in
+            //             SyncManager.isEnabled = newValue
+            //             showingRestartAlert = true
+            //         }
+            // } else {
+            //     Button { showingPaywall = true } label: {
+            //         Label("iCloud Sync (Pro)", systemImage: "icloud")
+            //     }
+            // }
         }
     }
 

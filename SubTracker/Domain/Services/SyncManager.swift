@@ -15,18 +15,20 @@ enum SyncManager {
         set { UserDefaults.standard.set(newValue, forKey: enabledKey) }
     }
 
-    static func makeContainer(enableCloud: Bool) throws -> ModelContainer {
+    static func makeContainer(enableCloud _: Bool) throws -> ModelContainer {
         let schema = Schema([Subscription.self, PaymentRecord.self])
-        let config: ModelConfiguration
-        if enableCloud {
-            config = ModelConfiguration(
-                schema: schema,
-                isStoredInMemoryOnly: false,
-                cloudKitDatabase: .automatic
-            )
-        } else {
-            config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        }
+        // iCloud / CloudKit disabled for now.
+        // let config: ModelConfiguration
+        // if enableCloud {
+        //     config = ModelConfiguration(
+        //         schema: schema,
+        //         isStoredInMemoryOnly: false,
+        //         cloudKitDatabase: .automatic
+        //     )
+        // } else {
+        //     config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        // }
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         return try ModelContainer(for: schema, configurations: [config])
     }
 }

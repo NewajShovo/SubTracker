@@ -20,7 +20,7 @@ struct SubscriptionIntelligenceService {
             return ruleResult
         }
 
-        if await foundationModels.isAvailable {
+        if foundationModels.isAvailable {
             do {
                 let fmResult = try await foundationModels.extractSubscription(from: text)
                 if fmResult.confidence >= ruleResult.confidence {

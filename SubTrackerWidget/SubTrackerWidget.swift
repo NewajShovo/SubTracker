@@ -22,9 +22,15 @@ struct SubTrackerWidgetProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SubTrackerWidgetEntry>) -> Void) {
         let payload = WidgetDataStore.load()
-        let entry = SubTrackerWidgetEntry(date: Date(), payload: payload)
-        let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date().addingTimeInterval(3600)
-        completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
+        let now = Date()
+        let entry = SubTrackerWidgetEntry(date: now, payload: payload)
+        let hourLater = Calendar.current.date(byAdding: .hour, value: 1, to: now) ?? now.addingTimeInterval(3600)
+        let nextMorning = Calendar.current.nextDate(
+            after: now,
+            matching: DateComponents(hour: 0, minute: 10),
+            matchingPolicy: .nextTime
+        ) ?? hourLater
+        completion(Timeline(entries: [entry], policy: .after(min(hourLater, nextMorning))))
     }
 
     private var samplePayload: WidgetDataPayload {
