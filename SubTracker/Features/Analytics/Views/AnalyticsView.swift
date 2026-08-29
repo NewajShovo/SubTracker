@@ -73,7 +73,7 @@ struct AnalyticsView: View {
                 .padding(.vertical)
             }
             .navigationTitle("Analytics")
-            .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .fullScreenCover(isPresented: $showingPaywall) { PaywallView() }
         }
     }
 

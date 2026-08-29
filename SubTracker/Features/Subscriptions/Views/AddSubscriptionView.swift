@@ -125,7 +125,7 @@ struct AddSubscriptionView: View {
             .sheet(isPresented: $showingLimit) {
                 SubscriptionLimitView(currentCount: allSubscriptions.count) { showingPaywall = true }
             }
-            .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .fullScreenCover(isPresented: $showingPaywall) { PaywallView() }
             .onAppear {
                 if let subscription = subscriptionToEdit {
                     loadSubscription(subscription)

@@ -46,7 +46,7 @@ struct ScanSubscriptionView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
-            .sheet(isPresented: $showingPaywall) {
+            .fullScreenCover(isPresented: $showingPaywall) {
                 PaywallView()
             }
             .onChange(of: selectedItem) { _, newItem in

@@ -83,7 +83,7 @@ struct DashboardView: View {
             .sheet(isPresented: $showingSubscriptionLimit) {
                 SubscriptionLimitView(currentCount: allSubscriptions.count) { showingPaywall = true }
             }
-            .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .fullScreenCover(isPresented: $showingPaywall) { PaywallView() }
             .onAppear { WidgetDataStore.update(from: allSubscriptions) }
             .onChange(of: allSubscriptions.count) { _, _ in
                 WidgetDataStore.update(from: allSubscriptions)

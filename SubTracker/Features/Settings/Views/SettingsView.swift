@@ -34,7 +34,7 @@ struct SettingsView: View {
                 #endif
             }
             .navigationTitle("Settings")
-            .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .fullScreenCover(isPresented: $showingPaywall) { PaywallView() }
             .sheet(isPresented: $showingExportSheet) {
                 if let exportURL {
                     ShareSheet(items: [exportURL])

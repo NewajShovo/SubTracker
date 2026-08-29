@@ -79,7 +79,7 @@ struct ScanReviewView: View {
                 .disabled(!extracted.isValid)
             }
         }
-        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .fullScreenCover(isPresented: $showingPaywall) { PaywallView() }
         .sheet(isPresented: $showingLimit) {
             SubscriptionLimitView(currentCount: allSubscriptions.count) {
                 showingPaywall = true

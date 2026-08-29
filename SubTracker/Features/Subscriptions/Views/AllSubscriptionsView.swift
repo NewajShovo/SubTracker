@@ -94,7 +94,7 @@ struct AllSubscriptionsView: View {
             .sheet(isPresented: $showingLimit) {
                 SubscriptionLimitView(currentCount: allSubscriptions.count) { showingPaywall = true }
             }
-            .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .fullScreenCover(isPresented: $showingPaywall) { PaywallView() }
             .overlay {
                 if filteredSubscriptions.isEmpty {
                     ContentUnavailableView(
