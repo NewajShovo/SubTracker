@@ -33,21 +33,29 @@ struct PaywallView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                PaywallBackground()
+            GeometryReader { geometry in
+                let metrics = PaywallLayoutMetrics(
+                    height: geometry.size.height,
+                    width: geometry.size.width
+                )
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 32) {
-                        headerSection
-                        featuresSection
-                        pricingSection
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 160)
+                VStack(spacing: metrics.sectionSpacing) {
+                    headerSection(metrics: metrics)
+                    featuresSection(metrics: metrics)
+                    pricingSection(metrics: metrics)
+
+                    Spacer(minLength: 0)
+
+                    bottomBar(metrics: metrics)
                 }
-
-                bottomBar
+                .padding(.horizontal, metrics.horizontalPadding)
+                .padding(.top, metrics.topPadding)
+                .padding(.bottom, metrics.bottomPadding)
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+            }
+            .background {
+                PaywallBackground()
+                    .ignoresSafeArea()
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -80,8 +88,8 @@ struct PaywallView: View {
 
     // MARK: - Header
 
-    private var headerSection: some View {
-        VStack(spacing: 16) {
+    private func headerSection(metrics: PaywallLayoutMetrics) -> some View {
+        VStack(spacing: metrics.headerSpacing) {
             ZStack {
                 Circle()
                     .fill(
@@ -91,10 +99,10 @@ struct PaywallView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 72, height: 72)
+                    .frame(width: metrics.crownSize, height: metrics.crownSize)
 
                 Image(systemName: "crown.fill")
-                    .font(.system(size: 30, weight: .semibold))
+                    .font(.system(size: metrics.crownIconSize, weight: .semibold))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [Color(hex: "FBBF24"), Color(hex: "F59E0B")],
@@ -107,7 +115,7 @@ struct PaywallView: View {
             .opacity(appeared ? 1 : 0)
             .offset(y: appeared ? 0 : 12)
 
-            VStack(spacing: 10) {
+            VStack(spacing: metrics.isCompact ? 6 : 10) {
                 Text("SubTracker Pro")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(PaywallTheme.accent)
@@ -116,40 +124,48 @@ struct PaywallView: View {
                     .background(PaywallTheme.accent.opacity(colorScheme == .dark ? 0.18 : 0.1), in: Capsule())
 
                 Text("Stop paying for subscriptions you forgot about.")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(size: metrics.titleSize, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
+                    .lineLimit(metrics.isCompact ? 3 : 4)
+                    .minimumScaleFactor(0.85)
 
-                Text("SubTracker Pro helps you track, scan, and stay ahead of renewals.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(2)
+                if !metrics.isVeryCompact {
+                    Text("SubTracker Pro helps you track, scan, and stay ahead of renewals.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.9)
+                }
             }
             .opacity(appeared ? 1 : 0)
             .offset(y: appeared ? 0 : 16)
         }
-        .padding(.top, 12)
     }
 
     // MARK: - Features
 
-    private var featuresSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+    private func featuresSection(metrics: PaywallLayoutMetrics) -> some View {
+        VStack(alignment: .leading, spacing: metrics.featureSectionSpacing) {
             Text("Everything in Pro")
-                .font(.headline)
+                .font(metrics.isCompact ? .subheadline.weight(.semibold) : .headline)
                 .foregroundStyle(.primary)
 
             LazyVGrid(
-                columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
-                spacing: 12
+                columns: [
+                    GridItem(.flexible(), spacing: metrics.featureGridSpacing),
+                    GridItem(.flexible(), spacing: metrics.featureGridSpacing)
+                ],
+                spacing: metrics.featureGridSpacing
             ) {
                 ForEach(features) { feature in
-                    PaywallFeatureCell(feature: feature)
+                    PaywallFeatureCell(feature: feature, metrics: metrics)
                 }
             }
         }
-        .padding(20)
+        .padding(metrics.featureCardPadding)
         .background(featureCardBackground)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 20)
@@ -167,25 +183,26 @@ struct PaywallView: View {
 
     // MARK: - Pricing
 
-    private var pricingSection: some View {
-        VStack(spacing: 20) {
-            VStack(spacing: 12) {
+    private func pricingSection(metrics: PaywallLayoutMetrics) -> some View {
+        VStack(spacing: metrics.pricingSpacing) {
+            VStack(spacing: metrics.isCompact ? 8 : 12) {
                 Text("Choose your plan")
-                    .font(.headline)
+                    .font(metrics.isCompact ? .subheadline.weight(.semibold) : .headline)
 
                 BillingCycleToggle(
                     selection: $billingCycle,
-                    savingsLabel: yearlySavingsLabel
+                    savingsLabel: yearlySavingsLabel,
+                    metrics: metrics
                 )
             }
 
             if storeManager.products.isEmpty {
                 ProgressView()
-                    .controlSize(.large)
+                    .controlSize(metrics.isCompact ? .regular : .large)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 40)
+                    .padding(.vertical, metrics.isCompact ? 16 : 24)
             } else {
-                pricingCards
+                pricingCards(metrics: metrics)
             }
         }
         .opacity(appeared ? 1 : 0)
@@ -193,67 +210,37 @@ struct PaywallView: View {
     }
 
     @ViewBuilder
-    private var pricingCards: some View {
+    private func pricingCards(metrics: PaywallLayoutMetrics) -> some View {
         let monthly = storeManager.product(for: .monthlyPro)
         let yearly = storeManager.product(for: .yearlyPro)
 
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: 14) {
-                if let monthly {
-                    ModernPricingCard(
-                        product: monthly,
-                        cycle: .monthly,
-                        isSelected: billingCycle == .monthly,
-                        isPurchased: storeManager.isPurchased(monthly),
-                        isRecommended: false
-                    ) {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                            billingCycle = .monthly
-                        }
-                    }
-                }
-
-                if let yearly {
-                    ModernPricingCard(
-                        product: yearly,
-                        cycle: .yearly,
-                        isSelected: billingCycle == .yearly,
-                        isPurchased: storeManager.isPurchased(yearly),
-                        isRecommended: true
-                    ) {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                            billingCycle = .yearly
-                        }
+        HStack(alignment: .top, spacing: metrics.cardSpacing) {
+            if let monthly {
+                ModernPricingCard(
+                    product: monthly,
+                    cycle: .monthly,
+                    isSelected: billingCycle == .monthly,
+                    isPurchased: storeManager.isPurchased(monthly),
+                    isRecommended: false,
+                    metrics: metrics
+                ) {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        billingCycle = .monthly
                     }
                 }
             }
 
-            VStack(spacing: 14) {
-                if let monthly {
-                    ModernPricingCard(
-                        product: monthly,
-                        cycle: .monthly,
-                        isSelected: billingCycle == .monthly,
-                        isPurchased: storeManager.isPurchased(monthly),
-                        isRecommended: false
-                    ) {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                            billingCycle = .monthly
-                        }
-                    }
-                }
-
-                if let yearly {
-                    ModernPricingCard(
-                        product: yearly,
-                        cycle: .yearly,
-                        isSelected: billingCycle == .yearly,
-                        isPurchased: storeManager.isPurchased(yearly),
-                        isRecommended: true
-                    ) {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                            billingCycle = .yearly
-                        }
+            if let yearly {
+                ModernPricingCard(
+                    product: yearly,
+                    cycle: .yearly,
+                    isSelected: billingCycle == .yearly,
+                    isPurchased: storeManager.isPurchased(yearly),
+                    isRecommended: true,
+                    metrics: metrics
+                ) {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        billingCycle = .yearly
                     }
                 }
             }
@@ -262,8 +249,8 @@ struct PaywallView: View {
 
     // MARK: - Bottom Bar
 
-    private var bottomBar: some View {
-        VStack(spacing: 12) {
+    private func bottomBar(metrics: PaywallLayoutMetrics) -> some View {
+        VStack(spacing: metrics.isCompact ? 8 : 12) {
             if let selectedProduct {
                 Button {
                     Task { await purchaseProduct(selectedProduct) }
@@ -274,11 +261,11 @@ struct PaywallView: View {
                                 .tint(.white)
                         } else {
                             Text(storeManager.isPurchased(selectedProduct) ? "Subscribed" : "Continue with \(billingCycle.title)")
-                                .font(.headline)
+                                .font(metrics.isCompact ? .subheadline.weight(.semibold) : .headline)
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, metrics.ctaVerticalPadding)
                     .background {
                         if storeManager.isPurchased(selectedProduct) {
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -295,11 +282,13 @@ struct PaywallView: View {
                 .animation(.easeInOut(duration: 0.2), value: billingCycle)
             }
 
-            VStack(spacing: 8) {
+            VStack(spacing: metrics.isCompact ? 4 : 8) {
                 Text("Cancel anytime. Restore purchases if you've subscribed before.")
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.9)
 
                 Button {
                     Task {
@@ -312,21 +301,10 @@ struct PaywallView: View {
                     }
                 } label: {
                     Text("Restore Purchases")
-                        .font(.subheadline.weight(.medium))
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(PaywallTheme.accent)
                 }
             }
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
-        .background {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .bottom)
-                .overlay(alignment: .top) {
-                    Divider().opacity(0.35)
-                }
         }
     }
 
@@ -374,6 +352,48 @@ struct PaywallView: View {
             showingError = true
         }
         isPurchasing = false
+    }
+}
+
+// MARK: - Layout Metrics
+
+private struct PaywallLayoutMetrics {
+    let isCompact: Bool
+    let isVeryCompact: Bool
+
+    let horizontalPadding: CGFloat
+    let topPadding: CGFloat
+    let bottomPadding: CGFloat
+    let sectionSpacing: CGFloat
+    let headerSpacing: CGFloat
+    let crownSize: CGFloat
+    let crownIconSize: CGFloat
+    let titleSize: CGFloat
+    let featureSectionSpacing: CGFloat
+    let featureGridSpacing: CGFloat
+    let featureCardPadding: CGFloat
+    let pricingSpacing: CGFloat
+    let cardSpacing: CGFloat
+    let ctaVerticalPadding: CGFloat
+
+    init(height: CGFloat, width: CGFloat) {
+        isVeryCompact = height < 650
+        isCompact = height < 740
+
+        horizontalPadding = 20
+        topPadding = isVeryCompact ? 0 : (isCompact ? 4 : 8)
+        bottomPadding = isVeryCompact ? 4 : (isCompact ? 8 : 16)
+        sectionSpacing = isVeryCompact ? 8 : (isCompact ? 12 : 20)
+        headerSpacing = isVeryCompact ? 6 : (isCompact ? 8 : 14)
+        crownSize = isVeryCompact ? 44 : (isCompact ? 52 : 72)
+        crownIconSize = isVeryCompact ? 18 : (isCompact ? 22 : 30)
+        titleSize = isVeryCompact ? 20 : (isCompact ? 22 : 28)
+        featureSectionSpacing = isVeryCompact ? 6 : (isCompact ? 8 : 14)
+        featureGridSpacing = isVeryCompact ? 4 : (isCompact ? 6 : 10)
+        featureCardPadding = isVeryCompact ? 10 : (isCompact ? 12 : 18)
+        pricingSpacing = isVeryCompact ? 8 : (isCompact ? 12 : 16)
+        cardSpacing = isVeryCompact ? 8 : (isCompact ? 10 : 14)
+        ctaVerticalPadding = isVeryCompact ? 11 : (isCompact ? 13 : 16)
     }
 }
 
@@ -457,6 +477,7 @@ private struct PaywallBackground: View {
 private struct BillingCycleToggle: View {
     @Binding var selection: PaywallPlanCycle
     let savingsLabel: String?
+    let metrics: PaywallLayoutMetrics
     @Environment(\.colorScheme) private var colorScheme
     @Namespace private var toggleNamespace
 
@@ -470,7 +491,7 @@ private struct BillingCycleToggle: View {
                 } label: {
                     HStack(spacing: 6) {
                         Text(cycle.title)
-                            .font(.subheadline.weight(.semibold))
+                            .font(metrics.isCompact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
 
                         if cycle == .yearly, let savingsLabel {
                             Text(savingsLabel)
@@ -485,7 +506,7 @@ private struct BillingCycleToggle: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 11)
+                    .padding(.vertical, metrics.isCompact ? 9 : 11)
                     .foregroundStyle(selection == cycle ? .white : .secondary)
                     .background {
                         if selection == cycle {
@@ -514,26 +535,28 @@ private struct BillingCycleToggle: View {
 
 private struct PaywallFeatureCell: View {
     let feature: PaywallFeature
+    let metrics: PaywallLayoutMetrics
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: metrics.isCompact ? 6 : 8) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: metrics.isCompact ? 13 : 16, weight: .semibold))
                 .foregroundStyle(PaywallTheme.accent)
 
             Text(feature.title)
-                .font(.caption)
+                .font(metrics.isVeryCompact ? .system(size: 10) : (metrics.isCompact ? .caption2 : .caption))
                 .foregroundStyle(.primary)
                 .lineLimit(2)
-                .minimumScaleFactor(0.9)
+                .minimumScaleFactor(0.8)
 
             Spacer(minLength: 0)
         }
-        .padding(12)
+        .padding(.horizontal, metrics.isCompact ? 8 : 10)
+        .padding(.vertical, metrics.isCompact ? 7 : 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: metrics.isCompact ? 10 : 12, style: .continuous)
                 .fill(colorScheme == .dark ? Color.white.opacity(0.04) : Color(hex: "F1F5F9"))
         }
     }
@@ -547,6 +570,7 @@ private struct ModernPricingCard: View {
     let isSelected: Bool
     let isPurchased: Bool
     let isRecommended: Bool
+    let metrics: PaywallLayoutMetrics
     let onSelect: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
@@ -555,80 +579,81 @@ private struct ModernPricingCard: View {
 
     var body: some View {
         Button(action: onSelect) {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: metrics.isCompact ? 8 : 12) {
                 HStack {
                     if isRecommended {
                         Text("Recommended")
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
                             .background(PaywallTheme.recommendedGradient, in: Capsule())
                     }
 
                     Spacer()
 
                     if isPurchased {
-                        Label("Active", systemImage: "checkmark.seal.fill")
-                            .font(.caption2.weight(.semibold))
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.caption2)
                             .foregroundStyle(.green)
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(product.displayName)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
 
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
                         Text(product.displayPrice)
-                            .font(.system(size: 30, weight: .bold, design: .rounded))
+                            .font(.system(size: metrics.isCompact ? 22 : 28, weight: .bold, design: .rounded))
                             .foregroundStyle(.primary)
+                            .minimumScaleFactor(0.8)
+                            .lineLimit(1)
 
                         if let period = product.subscription?.subscriptionPeriod {
                             Text("/ \(period.unit.localizedDescription)")
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
 
                 if isYearly {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 4) {
                         Image(systemName: "gift.fill")
                             .font(.caption2)
                         Text("1 week free")
-                            .font(.caption.weight(.semibold))
+                            .font(.caption2.weight(.semibold))
                     }
                     .foregroundStyle(Color(hex: "10B981"))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                     .background(Color(hex: "10B981").opacity(0.12), in: Capsule())
                 }
 
-                Spacer(minLength: 0)
-
                 HStack {
-                    Text(isSelected ? "Selected" : "Select plan")
-                        .font(.caption.weight(.semibold))
+                    Text(isSelected ? "Selected" : "Select")
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(isSelected ? PaywallTheme.accent : .secondary)
 
                     Spacer()
 
                     Image(systemName: isPurchased ? "checkmark.circle.fill" : (isSelected ? "largecircle.fill.circle" : "circle"))
-                        .font(.body)
+                        .font(.caption)
                         .foregroundStyle(isPurchased ? .green : (isSelected ? PaywallTheme.accent : .secondary))
                 }
             }
-            .padding(18)
-            .frame(maxWidth: .infinity, minHeight: isRecommended ? 196 : 180, alignment: .topLeading)
+            .padding(metrics.isCompact ? 12 : 16)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
             .background(cardBackground)
             .overlay(cardBorder)
             .scaleEffect(isRecommended && isSelected ? 1.02 : 1)
             .shadow(
                 color: isSelected ? PaywallTheme.accent.opacity(colorScheme == .dark ? 0.28 : 0.18) : .black.opacity(colorScheme == .dark ? 0.2 : 0.05),
-                radius: isSelected ? 16 : 8,
-                y: isSelected ? 8 : 4
+                radius: isSelected ? 12 : 6,
+                y: isSelected ? 6 : 3
             )
         }
         .buttonStyle(.plain)
@@ -672,7 +697,8 @@ struct PricingCard: View {
             cycle: cycle,
             isSelected: isSelected,
             isPurchased: isPurchased,
-            isRecommended: cycle == .yearly
+            isRecommended: cycle == .yearly,
+            metrics: PaywallLayoutMetrics(height: 800, width: 390)
         ) {
             onSelect()
         }
