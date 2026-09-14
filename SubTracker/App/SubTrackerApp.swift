@@ -10,8 +10,6 @@ import SwiftUI
 struct SubTrackerApp: App {
     @StateObject private var storeManager = StoreManager.shared
     @StateObject private var featureGate: FeatureGate
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-
     let sharedModelContainer: ModelContainer
 
     init() {
@@ -27,11 +25,7 @@ struct SubTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if hasCompletedOnboarding {
-                ContentView()
-            } else {
-                OnboardingView(isOnboardingComplete: $hasCompletedOnboarding)
-            }
+            RootFlowView()
         }
         .modelContainer(sharedModelContainer)
         .environmentObject(storeManager)

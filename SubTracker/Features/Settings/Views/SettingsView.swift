@@ -140,10 +140,10 @@ struct SettingsView: View {
             Link(destination: URL(string: "mailto:zihadulkabir206@gmail.com")!) {
                 Label("Contact Support", systemImage: "envelope.fill")
             }
-            Link(destination: URL(string: "https://example.com/privacy")!) {
+            Link(destination: BrandTheme.privacyURL) {
                 Label("Privacy Policy", systemImage: "hand.raised.fill")
             }
-            Link(destination: URL(string: "https://example.com/terms")!) {
+            Link(destination: BrandTheme.termsURL) {
                 Label("Terms of Service", systemImage: "doc.text.fill")
             }
         }
@@ -169,8 +169,9 @@ struct SettingsView: View {
             }
             Button {
                 UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+                UserDefaults.standard.set(false, forKey: "hasCompletedLaunchPaywall")
             } label: {
-                Label("Reset Onboarding", systemImage: "arrow.counterclockwise")
+                Label("Reset Onboarding & Launch Paywall", systemImage: "arrow.counterclockwise")
             }
         }
     }

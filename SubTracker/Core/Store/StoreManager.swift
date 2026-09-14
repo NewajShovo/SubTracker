@@ -19,6 +19,13 @@ enum ProductIdentifier: String, CaseIterable {
     }
 }
 
+enum PurchaseOutcome: Equatable {
+    case success
+    case cancelled
+    case pending
+    case failed
+}
+
 @MainActor
 final class StoreManager: ObservableObject {
     static let shared = StoreManager()
@@ -27,6 +34,7 @@ final class StoreManager: ObservableObject {
     @Published private(set) var purchasedProductIDs: Set<String> = []
     @Published private(set) var isPro: Bool = false
     @Published private(set) var lastErrorMessage: String?
+    @Published private(set) var isLoadingProducts = false
 
     private var transactionListener: Task<Void, Error>?
 
@@ -43,41 +51,61 @@ final class StoreManager: ObservableObject {
     }
 
     func loadProducts() async {
+        isLoadingProducts = true
+        lastErrorMessage = nil
         do {
             let productIdentifiers = ProductIdentifier.allCases.map(\.rawValue)
             products = try await Product.products(for: productIdentifiers)
                 .sorted { $0.price < $1.price }
+            if products.isEmpty {
+                lastErrorMessage = "Couldn't load subscription options. Please try again."
+            }
         } catch {
             lastErrorMessage = "Couldn't load subscription options. Please try again."
             print("Failed to load products: \(error)")
         }
+        isLoadingProducts = false
     }
 
-    func purchase(_ product: Product) async throws -> Transaction? {
-        let result = try await product.purchase()
-        switch result {
-        case .success(let verification):
-            let transaction = try checkVerified(verification)
-            await updatePurchasedProducts()
-            await transaction.finish()
-            return transaction
-        case .userCancelled:
-            return nil
-        case .pending:
-            lastErrorMessage = "Purchase is pending approval."
-            return nil
-        @unknown default:
-            return nil
+    func purchase(_ product: Product) async -> PurchaseOutcome {
+        lastErrorMessage = nil
+        do {
+            let result = try await product.purchase()
+            switch result {
+            case .success(let verification):
+                let transaction = try checkVerified(verification)
+                await updatePurchasedProducts()
+                await transaction.finish()
+                return .success
+            case .userCancelled:
+                return .cancelled
+            case .pending:
+                lastErrorMessage = "Your purchase is pending approval."
+                return .pending
+            @unknown default:
+                lastErrorMessage = "Something went wrong. Please try again."
+                return .failed
+            }
+        } catch StoreError.failedVerification {
+            lastErrorMessage = "Purchase couldn't be verified. Please try again."
+            return .failed
+        } catch {
+            lastErrorMessage = "Something went wrong. Please try again."
+            return .failed
         }
     }
 
     func restorePurchases() async -> Bool {
+        lastErrorMessage = nil
         do {
             try await AppStore.sync()
             await updatePurchasedProducts()
+            if !isPro {
+                lastErrorMessage = "No active subscription was found."
+            }
             return isPro
         } catch {
-            lastErrorMessage = "Restore couldn't be completed. Please try again."
+            lastErrorMessage = "Something went wrong. Please try again."
             print("Failed to restore purchases: \(error)")
             return false
         }

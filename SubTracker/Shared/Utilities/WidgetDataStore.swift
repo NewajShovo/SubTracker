@@ -26,7 +26,7 @@ struct WidgetDataPayload: Codable {
 }
 
 enum WidgetDataStore {
-    static let appGroupID = "group.leo.SubTracker1"
+    static let appGroupID = "group.com.applab.subtracker"
     static let storageKey = "widgetSubscriptionData"
 
     static var defaults: UserDefaults {
